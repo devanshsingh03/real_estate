@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: real-estate-bros-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /data/real_estate.db
+      - key: UPLOADS_DIR
+        value: /data/uploads
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: BRAND_NAME
+        value: Real Estate Bros
+    healthCheckPath: /api/health
