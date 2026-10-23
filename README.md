@@ -4,6 +4,15 @@ A premium real estate / plot marketplace: browse, filter, and explore land plots
 (including a genuine interactive 3D layout explorer), submit enquiries, manage a
 wishlist as a registered buyer, and manage the entire catalog from an admin dashboard.
 
+**Live:**
+- Frontend: https://real-estate-bros.vercel.app
+- Backend API: https://real-estate-bros-api.onrender.com
+
+Both are on free hosting tiers — the backend (Render free) spins down after ~15
+minutes of inactivity, so the first request after a quiet period can take 30–60
+seconds to wake up. Its SQLite data also resets on redeploys since Render's free
+tier has no persistent disk; the seed script repopulates demo data automatically.
+
 ## Stack
 
 - **Frontend:** React + Vite + TypeScript, Tailwind CSS, Framer Motion, React Three Fiber / Drei, React Router
