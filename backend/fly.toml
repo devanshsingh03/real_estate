@@ -1,0 +1,29 @@
+# Fly.io app configuration for the Real Estate Bros backend API.
+# app name is set during `fly launch` / `fly apps create`.
+app = "real-estate-bros-api"
+primary_region = "bom"
+
+[build]
+
+[env]
+  PORT = "4000"
+  NODE_ENV = "production"
+  DB_PATH = "/data/real_estate.db"
+  UPLOADS_DIR = "/data/uploads"
+
+[[mounts]]
+  source = "real_estate_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
