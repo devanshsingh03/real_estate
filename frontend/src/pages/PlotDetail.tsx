@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MapPin, Ruler, BadgeCheck, Heart, Share2, Phone, Calendar, Ruler as RulerIcon, LandPlot, Eye,
+  Image as ImageIcon, Box, Loader2,
 } from 'lucide-react';
 import { useProperty } from '../hooks/useProperty';
 import ImageGallery from '../components/property/ImageGallery';
@@ -11,10 +12,13 @@ import PropertyCard from '../components/property/PropertyCard';
 import Skeleton from '../components/ui/Skeleton';
 import MapEmbed from '../components/ui/MapEmbed';
 import EMICalculator from '../components/property/EMICalculator';
+import { useWebGLSupport } from '../hooks/useWebGLSupport';
 import { formatINR, formatArea, statusColors, statusLabels, propertyTypeLabels } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { useConfig } from '../context/ConfigContext';
+
+const PlotPreview3D = lazy(() => import('../components/property/PlotPreview3D'));
 
 export default function PlotDetail() {
   const { slug } = useParams();
@@ -23,6 +27,8 @@ export default function PlotDetail() {
   const { whatsappNumber } = useConfig();
   const [favorited, setFavorited] = useState(false);
   const [showSiteVisit, setShowSiteVisit] = useState(false);
+  const [viewMode, setViewMode] = useState<'photos' | '3d'>('photos');
+  const webglSupported = useWebGLSupport();
 
   if (notFound) return <Navigate to="/plots" replace />;
 
@@ -65,7 +71,39 @@ export default function PlotDetail() {
       <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
         <div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <ImageGallery images={property.images} title={property.title} />
+            {webglSupported && property.images.length > 0 && (
+              <div className="mb-3 flex items-center gap-1 rounded-full border border-forest/15 bg-white p-1 w-fit">
+                <button
+                  onClick={() => setViewMode('photos')}
+                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                    viewMode === 'photos' ? 'bg-forest text-ivory' : 'text-charcoal/60'
+                  }`}
+                >
+                  <ImageIcon size={13} /> Photos
+                </button>
+                <button
+                  onClick={() => setViewMode('3d')}
+                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                    viewMode === '3d' ? 'bg-forest text-ivory' : 'text-charcoal/60'
+                  }`}
+                >
+                  <Box size={13} /> 3D View
+                </button>
+              </div>
+            )}
+
+            {viewMode === 'photos' || !webglSupported ? (
+              <ImageGallery images={property.images} title={property.title} />
+            ) : (
+              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-forest/10 bg-sage/10">
+                <Suspense fallback={<div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-forest" /></div>}>
+                  <PlotPreview3D image={property.images[0]} dimensions={property.dimensions} areaSqft={property.area_sqft} />
+                </Suspense>
+                <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-charcoal/80 px-3 py-1 text-[11px] text-ivory">
+                  Illustrative 3D preview, scaled to this plot's dimensions — drag to rotate
+                </p>
+              </div>
+            )}
           </motion.div>
 
           <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
