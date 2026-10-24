@@ -25,6 +25,7 @@ export default function ExplorePlots() {
   const [saveLabel, setSaveLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const search = searchParams.get('search') || '';
   const city = searchParams.get('city') || '';
@@ -57,6 +58,7 @@ export default function ExplorePlots() {
   async function handleSaveSearch() {
     if (!saveLabel.trim()) return;
     setSaving(true);
+    setSaveError('');
     try {
       await api.post('/saved-searches', {
         label: saveLabel.trim(),
@@ -68,8 +70,8 @@ export default function ExplorePlots() {
         setSaved(false);
         setSavePanelOpen(false);
       }, 1500);
-    } catch {
-      /* ignore */
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.error || 'Could not save this search. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -247,6 +249,14 @@ export default function ExplorePlots() {
                     {saved ? 'Saved' : 'Save'}
                   </button>
                 </div>
+                {saveError && (
+                  <p className="px-4 pb-4 text-xs text-red-700">
+                    {saveError}
+                    {saveError.includes('Upgrade') && (
+                      <> <Link to="/pricing" className="font-semibold underline">View Pricing</Link></>
+                    )}
+                  </p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

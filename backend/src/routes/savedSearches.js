@@ -6,6 +6,15 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 router.use(requireAuth);
 
+function savedSearchLimit(userId) {
+  const sub = db
+    .prepare(
+      `SELECT 1 FROM subscriptions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now')) LIMIT 1`
+    )
+    .get(userId);
+  return sub ? 50 : 3;
+}
+
 router.get('/', (req, res) => {
   const rows = db
     .prepare('SELECT * FROM saved_searches WHERE user_id = ? ORDER BY created_at DESC')
@@ -21,9 +30,16 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
 
+    const limit = savedSearchLimit(req.user.id);
     const existingCount = db.prepare('SELECT COUNT(*) as count FROM saved_searches WHERE user_id = ?').get(req.user.id).count;
-    if (existingCount >= 20) {
-      return res.status(409).json({ success: false, error: 'You can save up to 20 searches. Delete one to add more.' });
+    if (existingCount >= limit) {
+      return res.status(409).json({
+        success: false,
+        error:
+          limit === 3
+            ? 'Free accounts can save up to 3 searches. Upgrade to Premium for unlimited saved searches.'
+            : `You can save up to ${limit} searches. Delete one to add more.`,
+      });
     }
 
     const result = db

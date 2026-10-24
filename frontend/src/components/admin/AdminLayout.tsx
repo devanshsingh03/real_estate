@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { LayoutDashboard, Building2, Inbox, MapPinned, Settings, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Building2, Inbox, MapPinned, Settings, ExternalLink, CreditCard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/admin/properties', label: 'Properties', icon: Building2 },
   { to: '/admin/enquiries', label: 'Enquiries', icon: Inbox },
   { to: '/admin/locations', label: 'Locations', icon: MapPinned },
+  { to: '/admin/billing', label: 'Billing', icon: CreditCard },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

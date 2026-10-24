@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Menu, X, User as UserIcon, Heart, LayoutDashboard, BookmarkPlus } from 'lucide-react';
+import { Menu, X, User as UserIcon, Heart, LayoutDashboard, BookmarkPlus, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useConfig } from '../../context/ConfigContext';
+import { useBilling } from '../../hooks/useBilling';
 
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/plots', label: 'Explore Plots' },
   { to: '/locations', label: 'Locations' },
   { to: '/explorer', label: '3D Explorer' },
+  { to: '/pricing', label: 'Pricing' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ];
@@ -19,6 +21,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { brandName } = useConfig();
+  const { billing } = useBilling();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,11 +77,19 @@ export default function Navbar() {
           </Link>
           {user ? (
             <div className="group relative">
-              <button className="flex items-center gap-2 rounded-full border border-forest/20 p-2.5 text-forest transition-colors hover:bg-forest/5 focus-ring">
+              <button className="relative flex items-center gap-2 rounded-full border border-forest/20 p-2.5 text-forest transition-colors hover:bg-forest/5 focus-ring">
                 <UserIcon size={18} />
+                {billing?.isPremium && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-champagne text-forest">
+                    <Sparkles size={10} />
+                  </span>
+                )}
               </button>
               <div className="invisible absolute right-0 top-full w-48 translate-y-1 rounded-xl border border-forest/10 bg-ivory p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-2 group-hover:opacity-100">
                 <p className="truncate px-3 py-1.5 text-xs text-charcoal/60">{user.name}</p>
+                {billing?.isPremium && (
+                  <p className="mb-1 flex items-center gap-1.5 px-3 text-xs font-medium text-champagne"><Sparkles size={11} /> {billing.plan?.name}</p>
+                )}
                 <Link to="/account/wishlist" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-sage/20">
                   <Heart size={14} /> Wishlist
                 </Link>

@@ -15,6 +15,7 @@ const favoriteRoutes = require('./routes/favorites');
 const enquiryRoutes = require('./routes/enquiries');
 const savedSearchRoutes = require('./routes/savedSearches');
 const assistantRoutes = require('./routes/assistant');
+const billingRoutes = require('./routes/billing');
 
 const adminStatsRoutes = require('./routes/admin/stats');
 const adminPropertyRoutes = require('./routes/admin/properties');
@@ -22,6 +23,7 @@ const adminEnquiryRoutes = require('./routes/admin/enquiries');
 const adminLocationRoutes = require('./routes/admin/locations');
 const adminAmenityRoutes = require('./routes/admin/amenities');
 const adminSettingsRoutes = require('./routes/admin/settings');
+const adminBillingRoutes = require('./routes/admin/billing');
 
 const app = express();
 
@@ -41,6 +43,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/enquiries', enquiryRoutes);
 app.use('/api/saved-searches', savedSearchRoutes);
 app.use('/api/assistant', assistantRoutes);
+app.use('/api/billing', billingRoutes);
 
 app.use('/api/admin', requireAuth, requireAdmin);
 app.use('/api/admin/stats', adminStatsRoutes);
@@ -49,6 +52,7 @@ app.use('/api/admin/enquiries', adminEnquiryRoutes);
 app.use('/api/admin/locations', adminLocationRoutes);
 app.use('/api/admin/amenities', adminAmenityRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
+app.use('/api/admin/billing', adminBillingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -1,6 +1,23 @@
 export type PropertyType = 'residential' | 'commercial' | 'agricultural';
 export type PropertyStatus = 'available' | 'reserved' | 'sold';
 
+export interface Plan {
+  id: number;
+  key: string;
+  audience: 'seller' | 'buyer';
+  name: string;
+  description: string;
+  price_paise: number;
+  billing_period: 'one_time' | 'monthly' | 'yearly';
+  features: string[];
+}
+
+export interface BillingStatus {
+  isPremium: boolean;
+  plan: { key: string; name: string; expiresAt: string | null } | null;
+  savedSearchLimit: number;
+}
+
 export interface Amenity {
   id: number;
   name: string;

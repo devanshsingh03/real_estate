@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Check } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+import { openRazorpayCheckout } from '../lib/razorpay';
+import type { Plan } from '../types';
 
 export default function ListYourPlot() {
   const [form, setForm] = useState({
@@ -9,6 +13,19 @@ export default function ListYourPlot() {
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [enquiryId, setEnquiryId] = useState<number | null>(null);
+  const [featuredPlan, setFeaturedPlan] = useState<Plan | null>(null);
+  const [configured, setConfigured] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [paid, setPaid] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    api.get('/billing/plans').then((res) => {
+      setConfigured(res.data.data.configured);
+      setFeaturedPlan(res.data.data.plans.find((p: Plan) => p.key === 'seller_featured') || null);
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,11 +33,42 @@ export default function ListYourPlot() {
     setError('');
     const message = `New plot listing submission.\nCity/Locality: ${form.city}\nArea: ${form.area} sq.ft.\nExpected Price: ₹${form.expectedPrice}\nDescription: ${form.description}`;
     try {
-      await api.post('/enquiries', { name: form.name, phone: form.phone, email: form.email, message, type: 'contact' });
+      const res = await api.post('/enquiries', { name: form.name, phone: form.phone, email: form.email, message, type: 'contact' });
+      setEnquiryId(res.data.data.id);
       setStatus('success');
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Something went wrong. Please try again.');
       setStatus('error');
+    }
+  }
+
+  async function handleFeatureUpsell() {
+    if (!featuredPlan || !enquiryId || !user) return;
+    setPaying(true);
+    setError('');
+    try {
+      const res = await api.post('/billing/create-order', { planKey: featuredPlan.key, listingEnquiryId: enquiryId });
+      const { orderId, amount, currency, keyId } = res.data.data;
+      await openRazorpayCheckout({
+        orderId,
+        amount,
+        currency,
+        keyId,
+        name: featuredPlan.name,
+        description: 'Featured Listing — Real Estate Bros',
+        prefillName: user.name,
+        prefillEmail: user.email,
+        prefillContact: user.phone,
+        onSuccess: async (response) => {
+          await api.post('/billing/verify', response);
+          setPaid(true);
+        },
+        onDismiss: () => setPaying(false),
+      });
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Could not start payment. Please try again.');
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -35,15 +83,53 @@ export default function ListYourPlot() {
       </div>
 
       {status === 'success' ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-3 rounded-2xl border border-sage/40 bg-sage/10 px-6 py-14 text-center"
-        >
-          <CheckCircle2 size={40} className="text-forest" />
-          <p className="font-display text-2xl font-semibold text-forest">Submission received</p>
-          <p className="text-sm text-charcoal/60">Our team will review your details and get in touch shortly.</p>
-        </motion.div>
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center gap-3 rounded-2xl border border-sage/40 bg-sage/10 px-6 py-14 text-center"
+          >
+            <CheckCircle2 size={40} className="text-forest" />
+            <p className="font-display text-2xl font-semibold text-forest">Submission received</p>
+            <p className="text-sm text-charcoal/60">Our team will review your details and get in touch shortly.</p>
+          </motion.div>
+
+          {featuredPlan && configured && !paid && (
+            <div className="rounded-2xl border border-forest bg-white p-6">
+              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-champagne/40 px-3 py-1 text-xs font-semibold text-forest">
+                <Sparkles size={12} /> Optional
+              </span>
+              <h2 className="font-display text-xl font-semibold text-forest">Want faster review and featured placement?</h2>
+              <p className="mt-1 text-sm text-charcoal/60">{featuredPlan.description}</p>
+              <ul className="mt-3 space-y-1.5">
+                {featuredPlan.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-charcoal/70"><Check size={14} className="text-sage" /> {f}</li>
+                ))}
+              </ul>
+              {user ? (
+                <button
+                  onClick={handleFeatureUpsell}
+                  disabled={paying}
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-forest py-3 text-sm font-semibold text-ivory disabled:opacity-60"
+                >
+                  {paying && <Loader2 size={16} className="animate-spin" />}
+                  Upgrade for ₹{(featuredPlan.price_paise / 100).toLocaleString('en-IN')}
+                </button>
+              ) : (
+                <p className="mt-5 text-sm text-charcoal/60">
+                  <Link to="/login" className="font-medium text-forest underline">Log in</Link> to pay for featured placement.
+                </p>
+              )}
+              {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+            </div>
+          )}
+
+          {paid && (
+            <div className="flex items-center gap-2 rounded-2xl border border-sage/40 bg-sage/10 p-5 text-sm font-medium text-forest">
+              <CheckCircle2 size={18} /> Payment received — your listing will be prioritized for review.
+            </div>
+          )}
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-forest/10 bg-white p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

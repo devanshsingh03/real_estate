@@ -5,10 +5,67 @@ function slugify(str) {
   return str.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+function seedPlans() {
+  const plans = [
+    {
+      key: 'seller_standard',
+      audience: 'seller',
+      name: 'Standard Listing',
+      description: 'Submit your plot for review. No cost.',
+      price_paise: 0,
+      billing_period: 'one_time',
+      features: JSON.stringify(['Listed after admin review', 'Standard placement', 'Basic support']),
+      sort_order: 1,
+    },
+    {
+      key: 'seller_featured',
+      audience: 'seller',
+      name: 'Featured Listing',
+      description: 'Priority review and featured placement on the homepage and search results.',
+      price_paise: 49900,
+      billing_period: 'one_time',
+      features: JSON.stringify(['Priority review (within 24 hours)', 'Featured on homepage', 'Highlighted in search results', 'Verified badge fast-tracked']),
+      sort_order: 2,
+    },
+    {
+      key: 'buyer_free',
+      audience: 'buyer',
+      name: 'Free',
+      description: 'Everything you need to start browsing.',
+      price_paise: 0,
+      billing_period: 'one_time',
+      features: JSON.stringify(['Browse all plots', 'Up to 3 saved searches', 'Wishlist & enquiries']),
+      sort_order: 1,
+    },
+    {
+      key: 'buyer_premium',
+      audience: 'buyer',
+      name: 'Premium Buyer',
+      description: 'Unlimited saved searches and priority enquiry handling.',
+      price_paise: 19900,
+      billing_period: 'monthly',
+      features: JSON.stringify(['Unlimited saved searches', 'Priority enquiry handling', 'Early access to new listings', 'Priority support']),
+      sort_order: 2,
+    },
+  ];
+
+  const insert = db.prepare(`
+    INSERT INTO plans (key, audience, name, description, price_paise, billing_period, features, sort_order)
+    VALUES (@key, @audience, @name, @description, @price_paise, @billing_period, @features, @sort_order)
+    ON CONFLICT(key) DO UPDATE SET
+      name=excluded.name, description=excluded.description, price_paise=excluded.price_paise,
+      billing_period=excluded.billing_period, features=excluded.features, sort_order=excluded.sort_order
+  `);
+  plans.forEach((p) => insert.run(p));
+  console.log(`Seeded/updated ${plans.length} billing plans.`);
+}
+
 function seed() {
+  seedPlans();
+
   const existing = db.prepare('SELECT COUNT(*) as count FROM properties').get();
   if (existing.count > 0) {
-    console.log('Database already seeded. Skipping.');
+    console.log('Database already seeded. Skipping property seed.');
     return;
   }
 

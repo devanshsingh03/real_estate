@@ -23,6 +23,7 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const MyEnquiries = lazy(() => import('./pages/MyEnquiries'));
 const SavedSearches = lazy(() => import('./pages/SavedSearches'));
 const ComparePlots = lazy(() => import('./pages/ComparePlots'));
+const Pricing = lazy(() => import('./pages/Pricing'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -32,6 +33,7 @@ const AdminEnquiries = lazy(() => import('./pages/admin/Enquiries'));
 const AdminEnquiryDetail = lazy(() => import('./pages/admin/EnquiryDetail'));
 const AdminLocations = lazy(() => import('./pages/admin/Locations'));
 const AdminSettings = lazy(() => import('./pages/admin/Settings'));
+const AdminBilling = lazy(() => import('./pages/admin/Billing'));
 
 function PageLoader() {
   return (
@@ -60,6 +62,7 @@ export default function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/list-your-plot" element={<ListYourPlot />} />
+                  <Route path="/pricing" element={<Pricing />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route element={<ProtectedRoute />}>
@@ -80,6 +83,7 @@ export default function App() {
                     <Route path="/admin/enquiries/:id" element={<AdminEnquiryDetail />} />
                     <Route path="/admin/locations" element={<AdminLocations />} />
                     <Route path="/admin/settings" element={<AdminSettings />} />
+                    <Route path="/admin/billing" element={<AdminBilling />} />
                   </Route>
                 </Route>
               </Routes>

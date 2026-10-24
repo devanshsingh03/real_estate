@@ -132,6 +132,47 @@ CREATE TABLE IF NOT EXISTS saved_searches (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Billing: plans, orders, subscriptions
+CREATE TABLE IF NOT EXISTS plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  audience TEXT NOT NULL CHECK (audience IN ('seller', 'buyer')),
+  name TEXT NOT NULL,
+  description TEXT,
+  price_paise INTEGER NOT NULL,
+  billing_period TEXT NOT NULL CHECK (billing_period IN ('one_time', 'monthly', 'yearly')),
+  features TEXT NOT NULL DEFAULT '[]',
+  active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id INTEGER NOT NULL REFERENCES plans(id),
+  razorpay_order_id TEXT NOT NULL UNIQUE,
+  razorpay_payment_id TEXT,
+  amount_paise INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'INR',
+  status TEXT NOT NULL DEFAULT 'created' CHECK (status IN ('created', 'paid', 'failed')),
+  listing_enquiry_id INTEGER REFERENCES enquiries(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id INTEGER NOT NULL REFERENCES plans(id),
+  order_id INTEGER REFERENCES orders(id),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
+  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id, status);
+
 CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location_id);
 CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(status);
 CREATE INDEX IF NOT EXISTS idx_properties_published ON properties(published);
